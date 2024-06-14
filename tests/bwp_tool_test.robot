@@ -11,27 +11,49 @@ BWP tool basic testing
 
     ${headers}=  Create Dictionary  Content-Type=application/json
     ${proxies}=  Create Dictionary  http=${PROXY}  https=${PROXY}
-    ${response}=  GET  ${RANDOM_DATA_URL}  proxies=${proxies}    params=size=1
-    ${body}    Set Variable    ${response.json()}
 
-    ${full_name}    Set Variable    ${body}[0][first_name] ${body}[0][last_name]
-    ${email}    Set Variable    ${body}[0][email]
-    ${id}    Set Variable    ${body}[0][id]
+    ${response}=  GET  ${RANDOM_USER_DATA_URL}  proxies=${proxies}    params=size=1
+    ${body_user}    Set Variable    ${response.json()}
 
-    Add New Customer    ${full_name}    ${email}    ${EMPTY}    ${id}   
+    Click On Add Button To Add New Element
+    Add New Customer    ${body_user}   
     Save Form
-    Verify Added Customer    ${full_name}    ${email}    ${EMPTY}    ${id}
+    Verify Added Customer    ${body_user}
 
     Click On A Menu Tab    ${LOCATIONS_MENU_TAB}
     Verify Page Content    ${LOCATION_HEADER}    ${LOCATIONS_PAGE_GRID}
 
-    ${city}    Set Variable    ${body}[0][address][city]
-    ${zip_code}    Set Variable    ${body}[0][address][zip_code]
-    ${street_name}    Set Variable    ${body}[0][address][street_name]
-
-    Add New Location    ${full_name}    ${city}    ${zip_code}    ${street_name}    ${EMPTY}
+    Click On Add Button To Add New Element
+    Add New Location    ${body_user}
     Save Form
-    Verify Added Location    ${full_name}    ${city}    ${zip_code}    ${street_name}    ${EMPTY}   
+    Verify Added Location    ${body_user}   
+
+    ${response_device}=  GET  ${RANDOM_DEVICE_DATA_URL}  proxies=${proxies}    params=size=2
+    ${body_device}    Set Variable    ${response_device.json()}
+
+    Click On A Menu Tab    ${TOOLS_MENU_TAB}
+    Verify Page Content    ${TOOLS_HEADER}    ${TOOLS_PAGE_GRID}
+    
+    ${device_count}    Get Length    ${body_device}
+    FOR    ${items}    IN RANGE    0    ${device_count}    
+        Click On Add Button To Add New Element
+        Add New Tool    ${body_device}[${items}]    ${body_user}
+        Save Form
+        Verify Added Tool    ${body_device}[${items}]    ${body_user}
+    END
+
+    # Export Excel
+
+    Click On A Menu Tab    ${LOCATIONS_MENU_TAB}
+    Verify Page Content    ${LOCATION_HEADER}    ${LOCATIONS_PAGE_GRID}
+
+    Search In Grid With Customer Name    ${body_user}
+
+    Verify Added Location    ${body_user}
+
+    Click Street Link In Table
+    Sleep    3
+    Check Location Info Page    ${body_user}
 
 
     Test Teardown
