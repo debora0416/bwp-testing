@@ -2,16 +2,27 @@
 Library    SeleniumLibrary
 Library    String
 Library    OperatingSystem
-# Library  RequestsLibrary
 
 *** Variables ***
-# URLs
 ${HOMEPAGE_URL}    https://bwpool.azurewebsites.net/
 ${PROXY}  http://idebproxy01.itsh.itsh-internal.hu:3128
 ${RANDOM_USER_DATA_URL}  https://random-data-api.com/api/users/random_user
 ${RANDOM_DEVICE_DATA_URL}  https://random-data-api.com/api/device/random_device
 
-# Locators
+${BROWSER}    Chrome
+${HOMEPAGE_TITLE}    BWP Index
+${NAVBAR_BRAND}    //a[@class='navbar-brand']
+${NAVBAR_BRAND_TEXT}    BWP nyilvántartó
+${ADD_NEW_ELEMENT}    //div[@id='Grid_add']/button
+${ADD_NEW_ELEMENT_FORM}    //div[@id="Grid_dialogEdit_wrapper"]//form
+${SAVE_BUTTON}    //button[text()='Save']
+${SEARCH_BOX_INPUT}    //input[@id='Grid_ToolbarSearchBox']
+${SEARCH_BUTTON}    //div[@id='Grid_search']//span[@title='Search']
+${EXCEL_EXPORT_BUTTON}    //div[@title='Excel Export']//button
+${DOWNLOADS_FOLDER_NAME}    Downloads
+${DOWNLOADS_PATH}    %{HOMEPATH}\\${DOWNLOADS_FOLDER_NAME}
+${EXPORTED_EXCEL_FILE_NAME}    Export.xlsx
+
 ${CUSTOMERS_MENU_TAB}    //a[@href="Customer"]
 ${CUSTOMERS_PAGE_GRID}    //h4[text()='Ügyfelek']/following-sibling::div[@id='Grid']
 ${CUSTOMERS_HEADER}    //h4[.='Ügyfelek']
@@ -26,13 +37,7 @@ ${GRID_TABLE_FIRST_ROW_THIRD_COLUMN}    //table[@id="Grid_content_table"]//tr[1]
 ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}    //table[@id="Grid_content_table"]//tr[1]/td[5]
 ${GRID_TABLE_FIRST_ROW_FIFTH_COLUMN}    //table[@id="Grid_content_table"]//tr[1]/td[6]
 ${GRID_TABLE_FIRST_ROW_SIXTH_COLUMN}    //table[@id="Grid_content_table"]//tr[1]/td[7]
-
-${ADD_NEW_ELEMENT}    //div[@id='Grid_add']/button
-${ADD_NEW_ELEMENT_FORM}    //div[@id="Grid_dialogEdit_wrapper"]//form
-${SAVE_BUTTON}    //button[text()='Save']
-${SIDE_BAR}    //div[@class='sidebar']
-${SEARCH_BOX_INPUT}    //input[@id='Grid_ToolbarSearchBox']
-${SEARCH_BUTTON}    //div[@id='Grid_search']//span[@title='Search']
+${GRID_TABLE_ROWS}    //table[@id="Grid_content_table"]//tr
 
 ${LOCATIONS_MENU_TAB}    //a[@href="Location"]
 ${LOCATIONS_PAGE_GRID}    //h4[text()='Telephelyek']/following-sibling::div[@id='Grid']
@@ -51,21 +56,12 @@ ${TOOL_LOCATION_INPUT}    //input[@placeholder='Telephely']
 ${TOOL_DESCRIPTION_INPUT}    //textarea[@id='Desc']
 ${TOOL_COMMENT_INPUT}    //textarea[@id='Comm']
 
-${EXCEL_EXPORT_BUTTON}    //div[@title='Excel Export']//button
 ${LOCATION_INFO_CUSTOMER_NAME}    //table[@id="infoList_content_table"]//tr[1]/td[2]
-
+${LOCATION_INFO_CUSTOMER_LOCATION}    //table[@id="infoList_content_table"]//tr[2]/td[2]
 ${LOCATION_INFO_LOCATION_HEADER}    //h6[.='Telephely adatok']
 ${LOCATION_INFO_TOOLS_HEADER}    //h6[.='Eszközök']
 ${LOCATION_INFO_WORKS_HEADER}    //h6[.='Munkák']
 ${LOCATION_INFO_MAP_HEADER}    //h6[.='Térkép']
-
-
-# Other Variables
-${BROWSER}    Chrome
-${HOME_PAGE_TITLE}    BWP Index
-
-${DOWNLOAD_DIR}    ${CURDIR}/downloads
-${EXCEL_FILENAME}  example.xlsx
 
 *** Keywords ***
 Open Browser And Navigate To Home Page
@@ -73,33 +69,28 @@ Open Browser And Navigate To Home Page
     Maximize Browser Window
 
 Verify Application Opens
-    ${current_url}    Get Location
-    Should Be Equal As Strings    ${current_url}    ${HOME_PAGE_URL}
-    Title Should Be    ${HOME_PAGE_TITLE}
+    Location Should Be    ${HOMEPAGE_URL}
+    Title Should Be    ${HOMEPAGE_TITLE}
+    ${navbar_brand}    Get Text    ${NAVBAR_BRAND}
+    Should Be Equal As Strings    ${navbar_brand}    ${NAVBAR_BRAND_TEXT}
 
 Click On A Menu Tab
     [Arguments]    ${menu_tab_locator}
-    # Wait Until Element Is Enabled    ${menu_tab_locator}
-    Sleep    2s
     Click Link    ${menu_tab_locator}
 
 Verify Page Content
-    [Arguments]    ${page_title}    ${grid_title_locator}
-    Wait Until Page Contains Element    ${page_title}
-    Page Should Contain Element    ${grid_title_locator}
+    [Arguments]    ${page_title}    ${grid_locator}
+    Wait Until Element Is Visible    ${page_title}
+    Element Should Be Visible    ${grid_locator}
 
 Click On Add Button To Add New Element
+    # ide kéne sleep
     Wait Until Element Is Enabled    ${ADD_NEW_ELEMENT}
     Click Button   ${ADD_NEW_ELEMENT}
     Wait Until Element Is Visible    ${ADD_NEW_ELEMENT_FORM}
 
 Add New Customer
-    [Arguments]    ${body}
-
-    ${full_name}    Set Variable    ${body}[0][first_name] ${body}[0][last_name]
-    ${email}    Set Variable    ${body}[0][email]
-    ${phone_number}    Set Variable    ${EMPTY}
-    ${comment}    Set Variable    ${body}[0][id]
+    [Arguments]    ${full_name}    ${email}    ${phone_number}    ${comment} 
 
     Input Text    ${CUSTOMER_NAME_INPUT}    ${full_name}
     ${full_name_value}=    Get Element Attribute    ${CUSTOMER_NAME_INPUT}    value
@@ -111,7 +102,7 @@ Add New Customer
 
     Input Text    ${CUSTOMER_PHONE_NUMBER_INPUT}    ${phone_number}
     ${phone_number}=    Get Element Attribute    ${CUSTOMER_PHONE_NUMBER_INPUT}    value
-    Should Be Equal As Strings    ${phone_number}    ${EMPTY}
+    Should Be Equal As Strings    ${phone_number}    ${phone_number}
 
     Input Text    ${CUSTOMER_COMMENT_INPUT}    ${comment}
     ${comment_value}=    Get Element Attribute    ${CUSTOMER_COMMENT_INPUT}    value
@@ -130,43 +121,33 @@ Add New Customer
 Save Form
     Click Button    ${SAVE_BUTTON}
     Wait Until Element Is Not Visible    ${SAVE_BUTTON}
+    # Sleep    3s
     
-Verify Added Customer
-    [Arguments]    ${body}
+Verify Customer In Table
+    [Arguments]    ${full_name}    ${email}    ${phone_number}    ${comment} 
 
-    ${full_name}    Set Variable    ${body}[0][first_name] ${body}[0][last_name]
-    ${email}    Set Variable    ${body}[0][email]
-    ${phone_number}    Set Variable    ${EMPTY}
-    ${comment}    Set Variable    ${body}[0][id]
-
-    Sleep    3s
+    Wait Until Element Contains    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${full_name}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${full_name}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_SECOND_COLUMN}    ${email}
-    Element Should Contain    ${GRID_TABLE_FIRST_ROW_THIRD_COLUMN}    ${EMPTY}
+    Element Should Contain    ${GRID_TABLE_FIRST_ROW_THIRD_COLUMN}    ${phone_number}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}    ${comment}
 
 Add New Location
-    [Arguments]    ${body}
+    [Arguments]    ${customer_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
 
-    ${customer}    Set Variable    ${body}[0][first_name] ${body}[0][last_name]
-    ${city}    Set Variable    ${body}[0][address][city]
-    ${zip_code}    Set Variable    ${body}[0][address][zip_code]
-    ${street_name}    Set Variable    ${body}[0][address][street_name]
-    ${house_number}    Set Variable    ${EMPTY}
+    Input Text    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    ${customer_name}
+    Wait Until Element Is Visible    //li[contains(text(), '${customer_name}')]
+    Click Element    //li[contains(text(), '${customer_name}')]
 
-    Input Text    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    ${customer}
-    Wait Until Element Is Visible    //li[contains(text(), '${customer}')]
-    Click Element    //li[contains(text(), '${customer}')]
     ${customer_value}=    Get Element Attribute    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    value
-    Should Be Equal As Strings    ${customer_value}    ${customer}
+    Should Be Equal As Strings    ${customer_value}    ${customer_name}
 
     Input Text    ${LOCATION_CITY_INPUT}    ${city}
     ${city_value}=    Get Element Attribute    ${LOCATION_CITY_INPUT}    value
     Should Be Equal As Strings    ${city_value}    ${city}
 
-    Input Text    ${LOCATION_ZIP_CODE_INPUT}    ${zip_code}
+    Input Text    ${LOCATION_ZIP_CODE_INPUT}    ${zip_code_without_hyphens}
     ${zip_code_value}=    Get Element Attribute    ${LOCATION_ZIP_CODE_INPUT}    value
-    ${zip_code_without_hyphens}=    Replace String    ${zip_code}    -    ${EMPTY}
     Should Be Equal As Strings    ${zip_code_value}    ${zip_code_without_hyphens}
 
     Input Text    ${LOCATION_STREET_NAME_INPUT}    ${street_name}
@@ -177,114 +158,89 @@ Add New Location
     ${house_number_value}=    Get Element Attribute    ${LOCATION_HOUSE_NUMBER_INPUT}    value
     Should Be Equal As Strings    ${house_number_value}    ${house_number}
 
-Verify Added Location
-    [Arguments]    ${body}
+Verify Location In Table
+    [Arguments]    ${customer_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
 
-    ${customer}    Set Variable    ${body}[0][first_name] ${body}[0][last_name]
-    ${city}    Set Variable    ${body}[0][address][city]
-    ${zip_code}    Set Variable    ${body}[0][address][zip_code]
-    ${street_name}    Set Variable    ${body}[0][address][street_name]
-    ${house_number}    Set Variable    ${EMPTY}
-
-    Element Should Contain    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${customer}
+    Wait Until Element Contains    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${customer_name}
+    Element Should Contain    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${customer_name}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_SECOND_COLUMN}    ${city}
-    ${zip_code_without_hyphens}=    Replace String    ${zip_code}    -    ${EMPTY}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_THIRD_COLUMN}    ${zip_code_without_hyphens}
-    # 0-val kezdődő?
-    # itt miért fogadta el a harmadik oszlopként?
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}    ${house_number}
 
 Add New Tool
-    [Arguments]    ${body_device}    ${body_user}
-
-    ${device_name}    Set Variable    ${body_device}[manufacturer] ${body_device}[model]
-    ${description}    Set Variable    ${body_device}[platform]
-    ${note}    Set Variable    ${body_device}[serial_number]
-
-    ${zip_code}    Set Variable    ${body_user}[0][address][zip_code]
-    ${city}    Set Variable    ${body_user}[0][address][city]
-    ${customer}    Set Variable    ${body_user}[0][first_name] ${body_user}[0][last_name]
-    ${street_name}    Set Variable    ${body_user}[0][address][street_name]
-    ${zip_code_without_hyphens}=    Replace String    ${zip_code}    -    ${EMPTY}
-    ${customer_location}    Set Variable    ${zip_code_without_hyphens} ${city}, ${street_name} 
+    [Arguments]    ${device_name}    ${description}    ${note}    ${customer_name}    ${customer_location}
 
     Input Text    ${TOOL_NAME_INPUT}    ${device_name}
     ${device_value}=    Get Element Attribute    ${TOOL_NAME_INPUT}    value
     Should Be Equal As Strings    ${device_value}    ${device_name}
     
-    Input Text    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    ${customer}
-    Wait Until Element Is Visible    //li[contains(text(), '${customer}')]
-    Click Element    //li[contains(text(), '${customer}')]
-    ${customer_value}=    Get Element Attribute    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    value
-    Should Be Equal As Strings    ${customer_value}    ${customer}
+    Input Text    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    ${customer_name}
+    Wait Until Element Is Visible    //li[contains(text(), '${customer_name}')]
+    Click Element    //li[contains(text(), '${customer_name}')]
 
-    # a telephely automatikusan kitöltődik, ha az ügyfélhez csak egy telephely tartozik (és mi tudjuk hogy csak egyet adtunk hozzá a teszt során)
-    # itt várni kéne addig amíg kitöltődik a dropdown, még nem ellenőriztem
-    # Sleep    3s
-    # Wait Until Element Contains    ${TOOL_LOCATION_INPUT}    ${customer_location}
+    ${customer_value}=    Get Element Attribute    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    value
+    Should Be Equal As Strings    ${customer_value}    ${customer_name}
+
     Sleep    3s
     ${customer_location_value}    Get Element Attribute    ${TOOL_LOCATION_INPUT}    value
     ${trimmed_location_value}    Strip String    ${customer_location_value}
     Should Be Equal As Strings    ${trimmed_location_value}    ${customer_location}
     
     Input Text    ${TOOL_DESCRIPTION_INPUT}    ${description}
-    ${description_value}=    Get Element Attribute    ${TOOL_DESCRIPTION_INPUT}    value
+    ${description_value}    Get Element Attribute    ${TOOL_DESCRIPTION_INPUT}    value
     Should Be Equal As Strings    ${description_value}    ${description}
 
     Input Text    ${TOOL_COMMENT_INPUT}    ${note}
     ${note_value}=    Get Element Attribute    ${TOOL_COMMENT_INPUT}    value
     Should Be Equal As Strings    ${note_value}    ${note}
 
-Verify Added Tool
-    [Arguments]    ${body_device}    ${body_user}
+Verify Tool In Table
+    [Arguments]    ${device_name}    ${description}    ${note}    ${customer_name}    ${customer_location}
 
-    ${device_name}    Set Variable    ${body_device}[manufacturer] ${body_device}[model]
-    ${description}    Set Variable    ${body_device}[platform]
-    ${note}    Set Variable    ${body_device}[serial_number]
-
-    ${zip_code}    Set Variable    ${body_user}[0][address][zip_code]
-    ${city}    Set Variable    ${body_user}[0][address][city]
-    ${customer}    Set Variable    ${body_user}[0][first_name] ${body_user}[0][last_name]
-    ${street_name}    Set Variable    ${body_user}[0][address][street_name]
-    ${zip_code_without_hyphens}=    Replace String    ${zip_code}    -    ${EMPTY}
-    ${customer_location}    Set Variable    ${zip_code_without_hyphens} ${city}, ${street_name} 
-
+    Wait Until Element Contains    ${GRID_TABLE_FIRST_ROW_SECOND_COLUMN}    ${device_name}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_SECOND_COLUMN}    ${device_name}
-    Element Should Contain    ${GRID_TABLE_FIRST_ROW_THIRD_COLUMN}    ${customer}
+    Element Should Contain    ${GRID_TABLE_FIRST_ROW_THIRD_COLUMN}    ${customer_name}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}    ${customer_location}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FIFTH_COLUMN}    ${description}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_SIXTH_COLUMN}    ${note}
 
-Export Excel
+Export Excel And Verify
     Click Button    ${EXCEL_EXPORT_BUTTON}
-    Log    ${DOWNLOAD_DIR}/${EXCEL_FILENAME}
-    ${files}  List Files In Directory  ${DOWNLOAD_DIR}
-    Log    ${files}
-    Wait Until Created    ${DOWNLOAD_DIR}/Export.xlsx
-    File Should Exist    ${DOWNLOAD_DIR}/Export.xlsx
-    Sleep    10s
 
-Search In Grid With Customer Name
-    [Arguments]    ${body_user}
-    ${customer}    Set Variable    ${body_user}[0][first_name] ${body_user}[0][last_name]
+    Wait Until Created    ${DOWNLOADS_PATH}/${EXPORTED_EXCEL_FILE_NAME}
+    File Should Exist    ${DOWNLOADS_PATH}/${EXPORTED_EXCEL_FILE_NAME}
+    Sleep    2s
+    Remove File    ${DOWNLOADS_PATH}/${EXPORTED_EXCEL_FILE_NAME}
 
-    Input Text    ${SEARCH_BOX_INPUT}    ${customer}
-    ${search_value}=    Get Element Attribute    ${SEARCH_BOX_INPUT}    value
-    Should Be Equal As Strings    ${search_value}    ${customer}
+Search In Grid With Param
+    [Arguments]    ${param}
+
+    Input Text    ${SEARCH_BOX_INPUT}    ${param}
+    ${param_value}=    Get Element Attribute    ${SEARCH_BOX_INPUT}    value
+    Should Be Equal As Strings    ${param_value}    ${param}
     Click Element    ${SEARCH_BUTTON}
-    Sleep    5s
+    Sleep    3s
+
+Check Table Row Number
+    [Arguments]    ${row_number}
+
+    ${rows_in_table}    Get WebElements    ${GRID_TABLE_ROWS}
+    ${rows_in_table_length}    Get Length    ${rows_in_table}
+    Should Be Equal As Integers    ${rows_in_table_length}    ${row_number}
+
+Click Street Link In Table
+    Click Link    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}//a
+    Sleep    3s
 
 Check Location Info Page
-    [Arguments]    ${body_user}
-    ${customer}    Set Variable    ${body_user}[0][first_name] ${body_user}[0][last_name]
+    [Arguments]    ${customer_name}    ${customer_location}
     
-    Element Should Contain    ${LOCATION_INFO_CUSTOMER_NAME}    ${customer}
+    Element Should Contain    ${LOCATION_INFO_CUSTOMER_NAME}    ${customer_name}
+    Element Should Contain    ${LOCATION_INFO_CUSTOMER_LOCATION}    ${customer_location}
     Element Should Be Visible    ${LOCATION_INFO_LOCATION_HEADER}
     Element Should Be Visible    ${LOCATION_INFO_TOOLS_HEADER}
     Element Should Be Visible    ${LOCATION_INFO_WORKS_HEADER}
     Element Should Be Visible    ${LOCATION_INFO_MAP_HEADER}
     
-Click Street Link In Table
-    Click Link    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}//a
 Test Teardown
     Close All Browsers
