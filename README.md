@@ -24,15 +24,15 @@ pip install -r requirements.txt
 ```
 
 ## Running Tests
-To run the the test suite, use the following command:
+To run the test case, use the following command:
 
 ```
-robot -d ./results ./tests/bwp_tool_test.robot
+robot -d ./results ./tests/bwp_basic_test.robot
 ```
 
-This will execute the test case in the login_tests.robot file and generate a report and log files in the results directory.
+This will execute the test case in the bwp_basic_test.robot file and generate a report and log files in the results directory.
 
 ## Test Cases
 The project includes the following test case:
 
-- bwp_tool_test.robot
+- bwp_basic_test.robot
