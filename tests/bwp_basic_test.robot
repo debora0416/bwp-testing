@@ -1,12 +1,12 @@
 *** Settings ***
 Resource    ../resources/common_resources.resource
-Library  RequestsLibrary
+Library    RequestsLibrary
 
 Test Setup    Open Browser And Navigate To Home Page
 Test Teardown    Test Teardown
 
 *** Test Cases ***
-BWP Basic Testing
+BWP Basic Test
     Verify Application Opens
 
     Sleep    3s
@@ -16,8 +16,8 @@ BWP Basic Testing
     ${headers}  Create Dictionary  Content-Type=application/json
     ${proxies}  Create Dictionary  http=${PROXY}  https=${PROXY}
 
-    ${response}=  GET  ${RANDOM_USER_DATA_URL}  proxies=${proxies}    params=size=1
-    ${body_user}    Set Variable    ${response.json()}
+    ${response_user}    GET    ${RANDOM_USER_DATA_URL}    proxies=${proxies}    params=size=1
+    ${body_user}    Set Variable    ${response_user.json()}
 
     ${full_name}    Set Variable    ${body_user}[0][first_name] ${body_user}[0][last_name]
     ${email}    Set Variable    ${body_user}[0][email]
@@ -45,7 +45,7 @@ BWP Basic Testing
     Save Form
     Verify Location In Table    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}   
 
-    ${response_device}=  GET  ${RANDOM_DEVICE_DATA_URL}  proxies=${proxies}    params=size=2
+    ${response_device}    GET    ${RANDOM_DEVICE_DATA_URL}    proxies=${proxies}    params=size=2
     ${body_device}    Set Variable    ${response_device.json()}
 
     Click On A Menu Tab    ${TOOLS_MENU_TAB}
@@ -71,7 +71,7 @@ BWP Basic Testing
     Click On A Menu Tab    ${LOCATIONS_MENU_TAB}
     Verify Page Content    ${LOCATION_HEADER}    ${LOCATIONS_PAGE_GRID}
 
-    # Sleep    3s
+    Sleep    3s
     Search In Grid With Param    ${full_name}
     Check Table Row Number    1
     Verify Location In Table    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
