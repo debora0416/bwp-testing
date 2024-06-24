@@ -11,7 +11,7 @@ BWP Basic Test
 
     Sleep    3s
     Click On A Menu Tab    ${CUSTOMERS_MENU_TAB}
-    Verify Page Content    ${CUSTOMERS_HEADER}    ${CUSTOMERS_PAGE_GRID}
+    Verify Page Content    ${CUSTOMERS_HEADER}    ${CUSTOMERS_PAGE_GRID}    ${CUSTOMERS_URL}
 
     ${headers}  Create Dictionary  Content-Type=application/json
     ${proxies}  Create Dictionary  http=${PROXY}  https=${PROXY}
@@ -33,23 +33,23 @@ BWP Basic Test
     ${customer_location}    Set Variable    ${zip_code_without_hyphens} ${city}, ${street_name}
 
     Click On Add Button To Add New Element
-    Add New Customer    ${full_name}    ${email}    ${phone_number}    ${comment}
+    Add New Customer Data    ${full_name}    ${email}    ${phone_number}    ${comment}
     Save Form
-    Verify Customer In Table    ${full_name}    ${email}    ${phone_number}    ${comment}
+    Verify Added Customer In Table    ${full_name}    ${email}    ${phone_number}    ${comment}
 
     Click On A Menu Tab    ${LOCATIONS_MENU_TAB}
-    Verify Page Content    ${LOCATION_HEADER}    ${LOCATIONS_PAGE_GRID}
+    Verify Page Content    ${LOCATION_HEADER}    ${LOCATIONS_PAGE_GRID}    ${LOCATIONS_URL}
 
     Click On Add Button To Add New Element
-    Add New Location    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
+    Add New Location Data    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
     Save Form
-    Verify Location In Table    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}   
+    Verify Added Location In Table    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}   
 
     ${response_device}    GET    ${RANDOM_DEVICE_DATA_URL}    proxies=${proxies}    params=size=2
     ${body_device}    Set Variable    ${response_device.json()}
 
     Click On A Menu Tab    ${TOOLS_MENU_TAB}
-    Verify Page Content    ${TOOLS_HEADER}    ${TOOLS_PAGE_GRID}
+    Verify Page Content    ${TOOLS_HEADER}    ${TOOLS_PAGE_GRID}    ${TOOLS_URL}
     
     ${device_count}    Get Length    ${body_device}
 
@@ -60,21 +60,22 @@ BWP Basic Test
         ${description}    Set Variable    ${body_device}[${items}][platform]
         ${note}    Set Variable    ${body_device}[${items}][serial_number]   
 
-        Add New Tool    ${device_name}    ${description}    ${note}    ${full_name}    ${customer_location}
+        Add New Tool Data    ${device_name}    ${description}    ${note}    ${full_name}    ${customer_location}
         Save Form
-        Verify Tool In Table    ${device_name}    ${description}    ${note}    ${full_name}    ${customer_location}
+        Verify Added Tool In Table    ${device_name}    ${description}    ${note}    ${full_name}    ${customer_location}
     END
 
     Sleep    3s
     Export Excel And Verify
 
     Click On A Menu Tab    ${LOCATIONS_MENU_TAB}
-    Verify Page Content    ${LOCATION_HEADER}    ${LOCATIONS_PAGE_GRID}
+    Verify Page Content    ${LOCATION_HEADER}    ${LOCATIONS_PAGE_GRID}    ${LOCATIONS_URL}
 
     Sleep    3s
     Search In Grid With Param    ${full_name}
+    Wait Until Element Contains    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${full_name}
     Check Table Row Number    1
-    Verify Location In Table    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
+    Verify Added Location In Table    ${full_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
 
     Click Street Link In Table
     Check Location Info Page    ${full_name}    ${customer_location}

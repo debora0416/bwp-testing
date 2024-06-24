@@ -9,12 +9,15 @@ ${PROXY}  http://idebproxy01.itsh.itsh-internal.hu:3128
 ${RANDOM_USER_DATA_URL}  https://random-data-api.com/api/users/random_user
 ${RANDOM_DEVICE_DATA_URL}  https://random-data-api.com/api/device/random_device
 ${LOCATION_INFO_URL}    https://bwpool.azurewebsites.net/LocationInfo
+${CUSTOMERS_URL}    https://bwpool.azurewebsites.net/Customer   
+${LOCATIONS_URL}    https://bwpool.azurewebsites.net/Location
+${TOOLS_URL}    https://bwpool.azurewebsites.net/Tool
 
 ${BROWSER}    Chrome
 ${HOMEPAGE_TITLE}    BWP Index
 ${NAVBAR_BRAND}    //a[@class='navbar-brand']
 ${NAVBAR_BRAND_TEXT}    BWP nyilvántartó
-${ADD_NEW_ELEMENT}    //div[@id='Grid_add']/button
+${ADD_NEW_ELEMENT_BUTTON}    //div[@id='Grid_add']/button
 ${ADD_NEW_ELEMENT_FORM}    //div[@id="Grid_dialogEdit_wrapper"]//form
 ${SAVE_BUTTON}    //button[text()='Save']
 ${SEARCH_BOX_INPUT}    //input[@id='Grid_ToolbarSearchBox']
@@ -56,8 +59,8 @@ ${TOOL_COMMENT_INPUT}    //textarea[@id='Comm']
 
 ${LOCATION_INFO_CUSTOMER_NAME}    //table[@id="infoList_content_table"]//tr[1]/td[2]
 ${LOCATION_INFO_CUSTOMER_LOCATION}    //table[@id="infoList_content_table"]//tr[2]/td[2]
-${LOCATION_INFO_LOCATION_HEADER}    //h6[.='Telephely adatok']
-${LOCATION_INFO_TOOLS_HEADER}    //h6[.='Eszközök']
+${LOCATION_INFO_LOCATION_DIV}    //div[@id="infoList"]
+${LOCATION_INFO_TOOLS_DIV}    //div[@id="toolsDiv"]
 ${LOCATION_INFO_WORKS_HEADER}    //h6[.='Munkák']
 ${LOCATION_INFO_MAP_HEADER}    //h6[.='Térkép']
 
@@ -79,19 +82,18 @@ Click On A Menu Tab
     Click Link    ${menu_tab_locator}
 
 Verify Page Content
-    [Arguments]    ${page_title}    ${grid_locator}
-
+    [Arguments]    ${page_title}    ${grid_locator}    ${page_url}
+    
     Wait Until Element Is Visible    ${page_title}
     Element Should Be Visible    ${grid_locator}
+    Location Should Be    ${page_url}
 
 Click On Add Button To Add New Element
-    # ide kéne sleep
     Sleep    3s
-    # Wait Until Element Is Enabled    ${ADD_NEW_ELEMENT}
-    Click Button   ${ADD_NEW_ELEMENT}
+    Click Button   ${ADD_NEW_ELEMENT_BUTTON}
     Wait Until Element Is Visible    ${ADD_NEW_ELEMENT_FORM}
 
-Add New Customer
+Add New Customer Data
     [Arguments]    ${full_name}    ${email}    ${phone_number}    ${comment} 
 
     Input Text    ${CUSTOMER_NAME_INPUT}    ${full_name}
@@ -110,22 +112,11 @@ Add New Customer
     ${comment_value}    Get Element Attribute    ${CUSTOMER_COMMENT_INPUT}    value
     Should Be Equal As Strings    ${comment_value}    ${comment}
 
-    # ${fields}    Create List    ${CUSTOMER_NAME_INPUT}    ${CUSTOMER_EMAIL_INPUT}    ${CUSTOMER_PHONE_NUMBER_INPUT}    ${CUSTOMER_COMMENT_INPUT}
-    # ${values}    Create List    ${full_name}    ${email}    ${phone_number}    ${id}
-    # ${expected_values}    Create List    ${full_name}    ${email}    ${EMPTY}    ${id}
-
-    # FOR    ${index}    IN RANGE    0    ${len(${fields})}
-    #     Input Text    ${fields}[${index}]    ${values}[${index}]
-    #     ${actual_value}    Get Element Attribute    ${fields}[${index}]    value
-    #     Should Be Equal As Strings    ${actual_value}    ${expected_values}[${index}]
-    # END
-
 Save Form
     Click Button    ${SAVE_BUTTON}
     Wait Until Element Is Not Visible    ${SAVE_BUTTON}
-    # Sleep    3s
     
-Verify Customer In Table
+Verify Added Customer In Table
     [Arguments]    ${full_name}    ${email}    ${phone_number}    ${comment} 
 
     Wait Until Element Contains    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${full_name}
@@ -134,7 +125,7 @@ Verify Customer In Table
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_THIRD_COLUMN}    ${phone_number}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}    ${comment}
 
-Add New Location
+Add New Location Data
     [Arguments]    ${customer_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
 
     Input Text    ${LOCATION_AND_TOOL_CUSTOMER_INPUT}    ${customer_name}
@@ -160,7 +151,7 @@ Add New Location
     ${house_number_value}    Get Element Attribute    ${LOCATION_HOUSE_NUMBER_INPUT}    value
     Should Be Equal As Strings    ${house_number_value}    ${house_number}
 
-Verify Location In Table
+Verify Added Location In Table
     [Arguments]    ${customer_name}    ${city}    ${zip_code_without_hyphens}    ${street_name}    ${house_number}
 
     Wait Until Element Contains    ${GRID_TABLE_FIRST_ROW_FIRST_COLUMN}    ${customer_name}
@@ -170,7 +161,7 @@ Verify Location In Table
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}    ${street_name}
     Element Should Contain    ${GRID_TABLE_FIRST_ROW_FIFTH_COLUMN}    ${house_number}
 
-Add New Tool
+Add New Tool Data
     [Arguments]    ${device_name}    ${description}    ${note}    ${customer_name}    ${customer_location}
 
     Input Text    ${TOOL_NAME_INPUT}    ${device_name}
@@ -197,7 +188,7 @@ Add New Tool
     ${note_value}    Get Element Attribute    ${TOOL_COMMENT_INPUT}    value
     Should Be Equal As Strings    ${note_value}    ${note}
 
-Verify Tool In Table
+Verify Added Tool In Table
     [Arguments]    ${device_name}    ${description}    ${note}    ${customer_name}    ${customer_location}
 
     Wait Until Element Contains    ${GRID_TABLE_FIRST_ROW_SECOND_COLUMN}    ${device_name}
@@ -225,7 +216,6 @@ Search In Grid With Param
     ${param_value}    Get Element Attribute    ${SEARCH_BOX_INPUT}    value
     Should Be Equal As Strings    ${param_value}    ${param}
     Click Element    ${SEARCH_BUTTON}
-    Sleep    3s
 
 Check Table Row Number
     [Arguments]    ${row_number}
@@ -236,18 +226,18 @@ Check Table Row Number
 
 Click Street Link In Table
     Click Link    ${GRID_TABLE_FIRST_ROW_FOURTH_COLUMN}//a
-    # Wait Until Location Contains    ${LOCATION_INFO_URL}
     Sleep    3s
 
 Check Location Info Page
     [Arguments]    ${customer_name}    ${customer_location}
 
+    Wait Until Element Is Visible    ${LOCATION_INFO_LOCATION_DIV}
     ${current_url}    Get Location
     Should Contain    ${current_url}    ${LOCATION_INFO_URL}
-    Element Should Be Visible    ${LOCATION_INFO_LOCATION_HEADER}
+    Element Should Be Visible    ${LOCATION_INFO_LOCATION_DIV}
     Element Should Contain    ${LOCATION_INFO_CUSTOMER_NAME}    ${customer_name}
     Element Should Contain    ${LOCATION_INFO_CUSTOMER_LOCATION}    ${customer_location}
-    Element Should Be Visible    ${LOCATION_INFO_TOOLS_HEADER}
+    Element Should Be Visible    ${LOCATION_INFO_TOOLS_DIV}
     Element Should Be Visible    ${LOCATION_INFO_WORKS_HEADER}
     Element Should Be Visible    ${LOCATION_INFO_MAP_HEADER}
    
